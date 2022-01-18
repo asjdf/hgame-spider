@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	flag          = `real_flag`
 	button        = `<a href="">点我试试</a>`
 	buttonWithUrl = `<a href="%v">点我试试</a>`
 	htmlTemp      = `<!DOCTYPE html>
@@ -51,10 +50,6 @@ const (
 `
 )
 
-var (
-	aseKey = []byte("1234567890123456")
-)
-
 type Info struct {
 	TeamId string `json:"team_id"`
 	Level  int64  `json:"level"`
@@ -66,13 +61,13 @@ func hello(ctx context.Context, req events.APIGatewayRequest) (resp events.APIGa
 	if key, ok := req.QueryString["key"]; ok {
 		Cipher, err := base64.StdEncoding.DecodeString(key[0])
 		if err != nil {
-			return Resp(genHtml("你这key有毒啊！"+err.Error(), "https://hgame.vidar.club/", 1))
+			return Resp(genHtml("你这key有毒啊！", "https://hgame.vidar.club/", 1))
 		}
 		plaintext := AESDecrypt(Cipher, aseKey)
 
 		err = sonic.UnmarshalString(string(plaintext), &info)
 		if err != nil {
-			return Resp(genHtml("你这key有毒啊！"+err.Error(), "https://hgame.vidar.club/", 1))
+			return Resp(genHtml("你这key有毒啊！", "https://hgame.vidar.club/", 1))
 		}
 	} else {
 		p := strings.Split(req.Path, "/")
@@ -88,15 +83,18 @@ func hello(ctx context.Context, req events.APIGatewayRequest) (resp events.APIGa
 	}
 
 	info.Level++
-	if info.Level == 100 {
+	if info.Level >= 100 {
 		s := sha256.Sum256([]byte(info.TeamId + flag))
 		hash2 := hex.EncodeToString(s[:])
 		return events.APIGatewayResponse{
 			IsBase64Encoded: false,
 			StatusCode:      200,
 			Headers: map[string]string{
-				"Content-Type": "text/html; charset=utf-8",
-				"fI4g":         "hgame{" + hash2 + "}"},
+				"Content-Type":     "text/html; charset=utf-8",
+				"fI4g":             "hgame{" + hash2 + "}",
+				"auth0r":           "asjdf",
+				"Welcome-To-HGame": "See you next week!",
+			},
 			Body: genHtml("我好像在就是把flag落在这里了欸~ 快帮我找找x", "", 1),
 		}, nil
 	}
@@ -104,11 +102,10 @@ func hello(ctx context.Context, req events.APIGatewayRequest) (resp events.APIGa
 	infoByte, _ := sonic.Marshal(&info)
 	Cipher := AESEncrypt(infoByte, aseKey)
 	nextUrl := "?key=" + url.QueryEscape(base64.StdEncoding.EncodeToString(Cipher))
-	return Resp(genHtml(fmt.Sprintf(info.TeamId+"你现在在第%v关", info.Level), nextUrl, int(info.Level)))
+	return Resp(genHtml(fmt.Sprintf("你现在在第%v关", info.Level), nextUrl, int(info.Level)))
 }
 
 func main() {
-	// Make the handler available for Remote Procedure Call by Cloud Function
 	cloudfunction.Start(hello)
 }
 
@@ -132,7 +129,10 @@ func Resp(body string) (events.APIGatewayResponse, error) {
 	return events.APIGatewayResponse{
 		IsBase64Encoded: false,
 		StatusCode:      200,
-		Headers:         map[string]string{"Content-Type": "text/html; charset=utf-8"},
-		Body:            body,
+		Headers: map[string]string{
+			"Content-Type": "text/html; charset=utf-8",
+			"hint":         "赶紧爬吧！蛛蛛...嘿嘿...我的蛛蛛...",
+		},
+		Body: body,
 	}, nil
 }
