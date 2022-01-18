@@ -71,9 +71,9 @@ func hello(ctx context.Context, req events.APIGatewayRequest) (resp events.APIGa
 		}
 	} else {
 		p := strings.Split(req.Path, "/")
-		if len(p) > 2 {
+		if len(p) > 1 && p[1] != "" {
 			info = Info{
-				TeamId: p[2],
+				TeamId: p[1],
 				Level:  0,
 				Noise:  time.Now().Unix(),
 			}
